@@ -36,7 +36,7 @@ class Client:
     """
     def __init__(self, config: 'configparser.ConfigParser'):
         self._sess = asks.Session()
-        self.api = _API(self._sess)
+        self.api = _API(self._sess, self)
         self._conf = config
         self.access_data = {}
         self.user_data = {}
@@ -181,8 +181,9 @@ class _API:
     """Questrade API endpoints exposed as methods and wrapped with an
     http session.
     """
-    def __init__(self, session: asks.Session):
+    def __init__(self, session: asks.Session, client: Client):
         self._sess = session
+        self._client = client
 
     async def _request(self, path: str, params=None) -> dict:
         resp = await self._sess.get(path=f'/{path}', params=params)
@@ -217,6 +218,52 @@ class _API:
 
     async def postions(self, id: str) -> dict:
         return await self._request(f'accounts/{id}/positions')
+
+    async def order(
+        self,
+        account_id: int,
+        symbol: str,
+        # symbolid: int,
+        quantity: int,
+        action: str,
+        # iceberg_quatity: int,
+        limit_price: float,
+        stop_price: float = '',
+        order_type: str = 'Limit',
+        is_all_or_none: str = 'false',
+        is_anonymous: bool = 'true',
+        # TODO: these can be switched to enum types
+        orderid: str = '',
+        primary_route: str = 'AUTO',
+        secondary_route: str = 'AUTO',
+    ):
+        """Place an order for symbol; ``**kwargs`` are the same as
+        for ``Client.order()``.
+
+        Note currently QT has disabled auto-order submission because they're
+        an incompetent brokerage that claims they can't adhere to IIROC rules
+        (wouldn't be surprised if they're lying or this is true). So, unfortunately,
+        this code is useless...
+        """
+        symbolid = (await self._client.tickers2ids([symbol]))[symbol]
+        # map to QT keys
+        post_packet = {
+            'orderID': orderid,
+            'symbolId': symbolid,
+            'quantity': quantity,
+            # 'icebergQuantity': iceberg_quatity,
+            'limitPrice': limit_price,
+            'stopPrice': stop_price,
+            'isAllOrNone': is_all_or_none,
+            'isAnonymous': is_anonymous,
+            'orderType': order_type,
+            'action': action,
+            'primaryRoute': primary_route,
+            'secondaryRoute': secondary_route,
+        }
+        resp = await self._sess.post(
+            path=f'accounts/{account_id}/orders', params=post_packet)
+        return resproc(resp, log)
 
 
 async def token_refresher(client):
@@ -270,10 +317,12 @@ async def get_client() -> Client:
         log.debug("Check time to ensure access token is valid")
         try:
             await client.api.time()
-        except Exception as err:
+        except Exception:
             # access token is likely no good
-            log.warn(f"Access token {client.access_data['access_token']} seems"
-                     f" expired, forcing refresh")
+            log.exception(
+                f"Access token {client.access_data['access_token']} seems"
+                f" expired, forcing refresh"
+            )
             await client.ensure_access(force_refresh=True)
             await client.api.time()
 
@@ -416,7 +465,6 @@ def format_quote(
         if isinstance(new_key, tuple):
             new_key, func = new_key
             display_value = func(value) if value else value
-
 
         new[new_key] = value
         displayable[new_key] = display_value
