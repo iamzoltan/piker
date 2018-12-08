@@ -5,7 +5,10 @@ import json
 import asks
 import logging
 
-from ..log import colorize_json
+from .. import log
+
+
+log = log.get_logger('http')
 
 
 class BrokerError(Exception):
@@ -22,6 +25,11 @@ def resproc(
     Raise the appropriate error on non-200 OK responses.
     """
     if not resp.status_code == 200:
+        log.exception(
+            f"HTTP error\n"
+            f"status: {resp.status_code}\n"
+            f"reason :{resp.reason_phrase}\n"
+            f"url: {resp.url}")
         raise BrokerError(resp.body)
     try:
         data = resp.json()
@@ -29,6 +37,6 @@ def resproc(
         log.exception(f"Failed to process {resp}:\n{resp.text}")
         raise BrokerError(resp.text)
     else:
-        log.trace(f"Received json contents:\n{colorize_json(data)}")
+        log.trace(f"Received json contents:\n{log.colorize_json(data)}")
 
     return data if return_json else resp
