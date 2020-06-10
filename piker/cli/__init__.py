@@ -17,6 +17,7 @@ _config_dir = click.get_app_dir('piker')
 _watchlists_data_path = os.path.join(_config_dir, 'watchlists.json')
 _context_defaults = dict(
     default_map={
+        # Questrade specific quote poll rates
         'monitor': {
             'rate': 3,
         },
@@ -66,5 +67,6 @@ def cli(ctx, broker, loglevel, configdir):
 
 # load downstream cli modules
 from ..brokers import cli as _
+from ..ui import cli as _
 from ..watchlists import cli as _
 from ..data import marketstore as _
