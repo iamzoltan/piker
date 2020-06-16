@@ -28,7 +28,7 @@ async def api(brokername: str, methname: str, **kwargs) -> dict:
 
         meth = getattr(client.api, methname, None)
         if meth is None:
-            log.warning(
+            log.debug(
                 f"Couldn't find API method {methname} looking up on client")
             meth = getattr(client, methname, None)
 
@@ -121,3 +121,14 @@ async def bars(
     """
     async with brokermod.get_client() as client:
         return await client.bars(symbol, **kwargs)
+
+
+async def symbol_info(
+    brokermod: ModuleType,
+    symbol: str,
+    **kwargs,
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Return symbol info from broker.
+    """
+    async with brokermod.get_client() as client:
+        return await client.symbol_info(symbol, **kwargs)
