@@ -45,7 +45,7 @@ def monitor(config, rate, name, dhost, test, tl):
         return
 
     _kivy_import_hack()
-    from .monitor import _async_main
+    from .kivy.monitor import _async_main
 
     async def main(tries):
         async with maybe_spawn_brokerd_as_subactor(
@@ -61,7 +61,7 @@ def monitor(config, rate, name, dhost, test, tl):
         partial(main, tries=1),
         name='monitor',
         loglevel=loglevel if tl else None,
-        rpc_module_paths=['piker.ui.monitor'],
+        rpc_module_paths=['piker.ui.kivy.monitor'],
         start_method='forkserver',
     )
 
@@ -81,7 +81,7 @@ def optschain(config, symbol, date, tl, rate, test):
     brokername = config['broker']
 
     _kivy_import_hack()
-    from .option_chain import _async_main
+    from .kivy.option_chain import _async_main
 
     async def main(tries):
         async with maybe_spawn_brokerd_as_subactor(
