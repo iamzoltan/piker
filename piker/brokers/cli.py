@@ -130,7 +130,6 @@ def bars(config, symbol, count, df_output):
         click.echo(colorize_json(bars))
 
 
-
 @cli.command()
 @click.option('--rate', '-r', default=5, help='Logging level')
 @click.option('--filename', '-f', default='quotestream.jsonstream',
@@ -259,7 +258,11 @@ def search(config, pattern):
     # global opts
     brokermod = config['brokermod']
 
-    quotes = trio.run(partial(core.symbol_search, brokermod, pattern))
+    quotes = tractor.run(
+        partial(core.symbol_search, brokermod, pattern),
+        start_method='forkserver',
+        loglevel='info',
+    )
     if not quotes:
         log.error(f"No matches could be found for {pattern}?")
         return
