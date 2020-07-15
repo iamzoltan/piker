@@ -8,7 +8,7 @@ import tractor
 
 from ..cli import cli
 from .. import watchlists as wl
-from ..brokers.core import maybe_spawn_brokerd_as_subactor
+from ..data import maybe_spawn_brokerd
 
 
 _config_dir = click.get_app_dir('piker')
@@ -48,7 +48,8 @@ def monitor(config, rate, name, dhost, test, tl):
     from .kivy.monitor import _async_main
 
     async def main(tries):
-        async with maybe_spawn_brokerd_as_subactor(
+        async with maybe_spawn_brokerd(
+            brokername=brokermod.name,
             tries=tries, loglevel=loglevel
         ) as portal:
             # run app "main"
@@ -84,7 +85,7 @@ def optschain(config, symbol, date, tl, rate, test):
     from .kivy.option_chain import _async_main
 
     async def main(tries):
-        async with maybe_spawn_brokerd_as_subactor(
+        async with maybe_spawn_brokerd(
             tries=tries, loglevel=loglevel
         ):
             # run app "main"
@@ -116,4 +117,8 @@ def chart(config, symbol, date, tl, rate, test):
     """
     from ._chart import main
 
-    main(symbol)
+    # global opts
+    loglevel = config['loglevel']
+    brokername = config['broker']
+
+    main(sym=symbol, brokername=brokername, loglevel=loglevel)

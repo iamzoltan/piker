@@ -8,7 +8,7 @@ import tractor
 
 from ..log import get_console_log, get_logger
 from ..brokers import get_brokermod, config
-from ..brokers.core import _data_mods
+from ..data import maybe_spawn_brokerd
 
 log = get_logger('cli')
 DEFAULT_BROKER = 'questrade'
@@ -35,6 +35,7 @@ _context_defaults = dict(
 def pikerd(loglevel, host, tl):
     """Spawn the piker broker-daemon.
     """
+    from ..data import _data_mods
     get_console_log(loglevel)
     tractor.run_daemon(
         rpc_module_paths=_data_mods,
@@ -65,8 +66,12 @@ def cli(ctx, broker, loglevel, configdir):
     })
 
 
+def _load_clis() -> None:
+    from ..data import marketstore as _
+    from ..brokers import cli as _
+    from ..ui import cli as _
+    from ..watchlists import cli as _
+
+
 # load downstream cli modules
-from ..brokers import cli as _
-from ..ui import cli as _
-from ..watchlists import cli as _
-from ..data import marketstore as _
+_load_clis()
