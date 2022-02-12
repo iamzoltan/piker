@@ -526,7 +526,6 @@ async def handle_order_requests(
 
             # call our client api to submit the order
             resp = await client.submit_limit(
-
                 oid=order.oid,
                 symbol=order.symbol,
                 price=order.price,
